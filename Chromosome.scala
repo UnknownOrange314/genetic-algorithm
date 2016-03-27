@@ -73,7 +73,7 @@ class Chromosome() {
   				if(expressionNumber==1){
   
   					val idx = (Math.random()*(functions.length-1)).toInt
-  							newVal = functions(idx)(newVal)
+						newVal = functions(idx)(newVal)
   
   				}
   				newStr=newVal.toString()
@@ -101,7 +101,6 @@ class Chromosome() {
 	 */
 	private def calculateFitness():Double = {
 
-	  println("Finding fitness")
 		var i = 0
 		var expressionCopy=new ArrayBuffer[String]()
 		expressionCopy.appendAll(expression)
@@ -136,8 +135,6 @@ class Chromosome() {
 				}
 			}
 		}
-	  println(Math.abs(TARGET_NUM/(TARGET_NUM-expressionCopy(0).toDouble)))
-	      
 		return Math.abs(TARGET_NUM/(TARGET_NUM-expressionCopy(0).toDouble));				
 	}
 
@@ -154,19 +151,13 @@ class Chromosome() {
 	}
 
 	def print(){
-
 		for(s <- expression){
 			if(s.equals("d"))
 				System.out.print("/");
 			else
 				System.out.print(s);
-
-
 		}
 		System.out.println();
-		// TODO Auto-generated method stub
-
 	}
-
 
 }

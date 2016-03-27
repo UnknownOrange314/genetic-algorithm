@@ -32,11 +32,25 @@ class FormulaGenerator(period:Long) extends JFrame{
 
 	private val WIDTH=1000
 	private val HEIGHT=1000
-	private var myGraphPanel=new GraphPanel(period,WIDTH,HEIGHT)
+	
+	val POPULATION_SIZE = 20
+  var genePool = new GenePool(POPULATION_SIZE)
+	private var myGraphPanel=new GraphPanel(period,WIDTH,HEIGHT,genePool)
+	
 	c.add(myGraphPanel,"Center")
 	pack()
 
-	myGraphPanel.startGame()
+	println("Start population")
+	
+	val population = new Thread(){
+	  override def run(){
+	    genePool.start()
+	  }
+	}
+	population.start()
+	
+	println("Start rendering")
+	myGraphPanel.startRendering()
 
 	setVisible(true)
 
@@ -63,18 +77,6 @@ class FormulaGenerator(period:Long) extends JFrame{
 		menu.add(quit)
 		quit.addActionListener(new QuitListener())
 
-		pause=new JButton("pause")
-		menu.add(pause)
-		pause.addActionListener(new PauseListener())
-
-		restart=new JButton("reset")
-		menu.add(restart)
-		restart.addActionListener(new RestartListener())
-
-		resume=new JButton("resume")
-		menu.add(resume);
-		resume.addActionListener(new ResumeListener())
-
 		c.add(menu,"East")
 
 		scorePanel=new JPanel()
@@ -90,35 +92,4 @@ class FormulaGenerator(period:Long) extends JFrame{
 		}
 	}
 
-	private class RestartListener extends ActionListener{
-		def actionPerformed(e:ActionEvent){
-			myGraphPanel.restartGame()
-		}
-	}
-
-	private class PauseListener extends ActionListener{
-		def actionPerformed(e:ActionEvent){
-			myGraphPanel.pauseGame()
-		}
-	}
-
-	private class ResumeListener extends ActionListener{
-		def actionPerformed(e:ActionEvent){
-			myGraphPanel.resumeGame()
-		}
-	}
-
-	def start(){  
-    myGraphPanel.resumeGame()
-	}
-
-	def stop(){
-	  myGraphPanel.pauseGame()
-  }
-
-	def destroy(){  
-    myGraphPanel.stopGame()
-  }
-
-
-} // end of WormChaseApplet class
+}

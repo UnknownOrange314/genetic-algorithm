@@ -1,6 +1,8 @@
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.ArrayBuffer
+import java.util.Timer;
+import java.util.TimerTask;
 
 class GenePool {
 	var sDevTrend= new ArrayBuffer[Double]  //Trend of standardDevation over time.
@@ -26,6 +28,12 @@ class GenePool {
     POPULATION_SIZE = popSize
 	}
 	
+	def start(){
+	  while(true){
+	    update()
+	  }
+	}
+	
 	def generatePopulation(popSize:Int):HashSet[Chromosome]={
 		var pop = new HashSet[Chromosome]
     var x = 0
@@ -44,27 +52,25 @@ class GenePool {
 		mutations(generations)
 		generations+=1
 
-		findBest()
-
-		System.out.println(fitness)
-	}
+		findBest()	
+  }
 	
 	def removeFailures():Double = {
-    println("Finding failures to remove")
 		var totalFitness = 0.0
 		var totalSize=0
 
 		for(c:Chromosome <- population){
-			totalSize=totalSize+c.getExpressionSize();
-			totalFitness=totalFitness+c.getFitness();
+			totalSize=totalSize+c.getExpressionSize()
+			totalFitness=totalFitness+c.getFitness()
 		}
 
-    println("Total fitness:"+totalFitness)
-    
-		var  averageFitness = totalFitness/population.size;
-		population = population.filter((c:Chromosome) =>c.getFitness<averageFitness)
-		averageFitnessTrend+=averageFitness;
-		return averageFitness;
+
+		var  averageFitness = totalFitness/population.size
+
+    var tolerance = 0.1 //Account for rounding issues that could make each chromosome "below average"
+		population = population.filter((c:Chromosome) =>c.getFitness>averageFitness-tolerance)
+		averageFitnessTrend+=averageFitness
+		return averageFitness
 
 	}
 	
@@ -74,7 +80,6 @@ class GenePool {
 		while(newPopulation.size<POPULATION_SIZE){
 
 			var A=pickRandomExpression(population)
-			println("Population size:"+population.size)
   		var expressionA=A.getExpression()
   
   		var B=pickRandomExpression(population)
@@ -92,7 +97,7 @@ class GenePool {
   			}
   			else{
   				newB+=expressionB(y)
-  						newA+=expressionA(y)  
+					newA+=expressionA(y)  
   			}
   		}
 			newPopulation+=(new Chromosome(newA))  
@@ -129,6 +134,7 @@ class GenePool {
 		var difference=Math.abs(totalFitness/(avgFitness+0.00000001))
 
 		changeTrend+=difference
+		sDevTrend+=sDev
 
 		//The mutation rate should be higher if the population is starting to stagnate
 		var mutationRate=Math.min(0.1,0.1/(difference*sDev+0.00000001))
@@ -145,7 +151,6 @@ class GenePool {
 			if(c.getFitness()>maxVal){
 				max=c;
 				maxVal=c.getFitness();
-				System.out.println(c.getFitness());
 			}
 		}
 	  fitnessRates+=maxVal;    

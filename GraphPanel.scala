@@ -9,15 +9,16 @@ import java.io._
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.ArrayBuffer
+import view.Graph
 
 /**
  * This class contains code for generating visualizations of the genetic algorithm. 
  * The graphics rendering code is a modified version of code taken from Killer Game Programming in Java
  */
-class GraphPanel(pd:Long, w:Int, h:Int) extends JPanel with Runnable{
+class GraphPanel(pd:Long, w:Int, h:Int,gPool:GenePool) extends JPanel with Runnable{
 
-	val POPULATION_SIZE = 20
-  var genePool = new GenePool(POPULATION_SIZE)
+
+	val genePool = gPool
 	
 	var PWIDTH=w
 	var PHEIGHT=h
@@ -58,7 +59,6 @@ class GraphPanel(pd:Long, w:Int, h:Int) extends JPanel with Runnable{
 	var myBuffer2:Graphics=_
 
 	val N = 400
-	var BACKGROUND = new Color(204,204,204)
 
 	var g:Graphics=_
 
@@ -92,7 +92,12 @@ class GraphPanel(pd:Long, w:Int, h:Int) extends JPanel with Runnable{
 	var MIN_Y_POS=50
 	var MAX_Y_POS=450
 
-	def startGame(){ 
+	var fitnessGraph = new Graph(0,0,500,"Fitness")
+	var sDevGraph = new Graph(0,500,500,"Standard deviation")
+	var changeGraph = new Graph(500,0,500,"Change")
+	var avgFitnessGraph = new Graph(500,500,500,"Average fitness");
+
+	def startRendering(){ 
 		if (animator == null || !running) {
 			animator = new Thread(this)
 			animator.start()
@@ -129,11 +134,10 @@ class GraphPanel(pd:Long, w:Int, h:Int) extends JPanel with Runnable{
 		running = true;
 		while(running) {
 			if(!isPaused){
-				populationUpdate() 
 				dataRender()  // render the game to a buffer
 				paintScreen()  // draw the buffer on-screen
 			}
-			afterTime =System.nanoTime()
+			afterTime = System.nanoTime()
 			timeDiff = afterTime - beforeTime
 			sleepTime = (period - timeDiff) - overSleepTime
 
@@ -164,7 +168,7 @@ class GraphPanel(pd:Long, w:Int, h:Int) extends JPanel with Runnable{
 			var skips = 0
 			while((excess > period) && (skips < MAX_FRAME_SKIPS)) {
 				excess -= period
-				populationUpdate()    // update state but don't render
+			  println("Too long")
 				skips+=1
 			} 
 		}
@@ -174,7 +178,6 @@ class GraphPanel(pd:Long, w:Int, h:Int) extends JPanel with Runnable{
 	def populationUpdate() { 
 		if (!isPaused && !gameOver){
 	    genePool.update()
-	  
 		}
 	}
 
@@ -193,71 +196,11 @@ class GraphPanel(pd:Long, w:Int, h:Int) extends JPanel with Runnable{
 		// clear the background
 		dbg.setColor(Color.white);
 		dbg.fillRect (0, 0, PWIDTH, PHEIGHT);
-		dbg.setColor(Color.RED);
-
-		//dbg.fillRect(0,0,800,800);
-		drawGraph(genePool.getFitnessRates,1,dbg);
-
-		dbg.setColor(Color.BLUE);
-		drawGraph(genePool.getSDevTrend,2,dbg);
-		dbg.setColor(Color.GREEN);
-		drawGraph(genePool.getChangeTrend,3,dbg);
-		dbg.setColor(Color.GRAY);
-		drawGraph(genePool.getAverageFitnessTrend,4,dbg);
-
-	}
-
-	def drawGraph(c:ArrayBuffer[Double] ,quadrant:Int,dbg:Graphics){
-		if(c.size==0){
-			return
-		}
-
-		var saveSize=10
-		var addX=0
-		var addY=0
-		if(quadrant==1){
-			addX=0
-			addY=0
-		}
-		if(quadrant==2) {
-			addX=500
-			addY=0
-		}
-		if(quadrant==3){
-			addX=0
-			addY=500
-		}
-		if(quadrant==4){
-			addX=500
-			addY=500
-		}
-
-		var interval=500.0/(c.size.toDouble)
-		var maxVal=(-1.0)
-		for(data:Double <- c){
-			if(data>maxVal){
-				maxVal=data
-			}
-		}
-
-		var index=0.0
-		var count=0
-
-		var x:Int = 0
-		for(x<-0 until 500){
-			var drawIndex=x*c.size/500
-			var total=0.0
-			var i:Int = 0
-			for(i<-drawIndex to drawIndex-saveSize by -1){
-				if(i>=0){
-					total=total+c(i)
-				}
-			}
-			total=total/saveSize
-			var xPos=x
-			var yPos=(500-500*total/maxVal).toInt
-			dbg.drawRect(xPos+addX,yPos+addY, 1, 1)
-		}     
+		
+		fitnessGraph.draw(Color.RED,genePool.getFitnessRates,dbg)
+		sDevGraph.draw(Color.BLUE,genePool.getSDevTrend,dbg)
+		changeGraph.draw(Color.GREEN,genePool.getChangeTrend,dbg)
+		avgFitnessGraph.draw(Color.GRAY,genePool.getAverageFitnessTrend,dbg)
 	}
 
 	def  paintScreen(){ 
@@ -279,15 +222,6 @@ class GraphPanel(pd:Long, w:Int, h:Int) extends JPanel with Runnable{
 		if (!finishedOff) {
 			finishedOff = true;
 		}
-	}
-
-	def getLeftBorder:Int = MIN_X_POS
-	def getRigtBorder:Int = MAX_X_POS
-	def getBottomBorder:Int = MIN_Y_POS
-	def getTopBorder:Int = MAX_X_POS
-
-	def  restartGame(){
-		println("Not implemented")   
 	}
 
 }  
