@@ -4,219 +4,192 @@ import scala.collection.mutable.ArrayBuffer
 import java.util.Timer;
 import java.util.TimerTask;
 
-class GenePool {
-	var sDevTrend= new ArrayBuffer[Double]  //Trend of standardDevation over time.
-	var averageFitnessTrend= new ArrayBuffer[Double]//Trend of averageFitness.
-	var changeTrend = new ArrayBuffer[Double]
-	var fitnessRates = new ArrayBuffer[Double] //Trend of fitness over time.
-	
-	var population: HashSet[Chromosome] = _
-	var POPULATION_SIZE:Int =_
-	val SAVE_NUM = 100
+/**
+ * Represents a population of candidate solutions to a problem.
+ */
 
-	//Genetic Algorithm Variables
-	var targetNumber = 5
-	val MUTATION_RATE=0.01
-	
-	def this(popSize:Int){
-    this()
-  	var i = 0 
-  	for(i <-0 until SAVE_NUM){
-  		fitnessRates+=0.0 
-  	}
-    population = generatePopulation(popSize)
-    POPULATION_SIZE = popSize
-	}
-	
-	def start(){
-	  while(true){
-	    update()
-	  }
-	}
-	
-	def generatePopulation(popSize:Int):HashSet[Chromosome]={
-		var pop = new HashSet[Chromosome]
+object GenePool {
+  def generatePopulation(popSize: Int): HashSet[Chromosome] = {
+    var pop = new HashSet[Chromosome]
     var x = 0
-		for(x<-0 until popSize){
-			pop.add(new Chromosome(null));
-		}
-		return pop
-	}
-	
-	def update(){
-		var fitness=removeFailures()
-		var generations=changeTrend.size
-		fitnessRates(generations%100)=fitness
-
-		crossover()
-		mutations(generations)
-		generations+=1
-
-		findBest()	
+    for (x <- 0 until popSize) {
+      pop.add(new Chromosome(null));
+    }
+    return pop
   }
-	
-	def removeFailures():Double = {
-		var totalFitness = 0.0
-		var totalSize=0
+}
+class GenePool {
+  var sDevTrend = new ArrayBuffer[Double] //Trend of standardDevation over time.
+  var averageFitnessTrend = new ArrayBuffer[Double] //Trend of averageFitness.
+  var changeTrend = new ArrayBuffer[Double] //Trend of how the average fitness is changing over tie.
+  var fitnessRates = new ArrayBuffer[Double] //Trend of fitness over time.
 
-		for(c:Chromosome <- population){
-			totalSize=totalSize+c.getExpressionSize()
-			totalFitness=totalFitness+c.getFitness()
-		}
+  var population: HashSet[Chromosome] = _
+  var POPULATION_SIZE: Int = _
+  var generations = 0
+  val SAVE_NUM = 100
+  var MAX_MUTATION_RATE = 0.2
 
+  def this(popSize: Int) {
+    this()
+    var i = 0
+    for (i <- 0 until SAVE_NUM) {
+      fitnessRates += 0.0
+    }
+    population = GenePool.generatePopulation(popSize)
+    POPULATION_SIZE = popSize
+  }
 
-		var  averageFitness = totalFitness/population.size
-
-    var tolerance = 0.1 //Account for rounding issues that could make each chromosome "below average"
-		population = population.filter((c:Chromosome) =>c.getFitness>averageFitness-tolerance)
-		averageFitnessTrend+=averageFitness
-		return averageFitness
-
-	}
-	
-	def crossover(){
-		var totalFitness=0
-		var newPopulation = new HashSet[Chromosome]()
-		while(newPopulation.size<POPULATION_SIZE){
-
-			var A=pickRandomExpression(population)
-  		var expressionA=A.getExpression()
+  //Starts the genetic algorithm.
+  def start() {
+    while (true) {
+      update()
+    }
+  }
   
-  		var B=pickRandomExpression(population)
-  		var expressionB=B.getExpression()
-  
-  		var crossPoint=(Math.random()*expressionA.size-1).toInt
-  		var newA=new ArrayBuffer[String]()
-  		var newB=new ArrayBuffer[String]()
-  
-  		var y =0
-  		for(y<-0 until expressionA.size){
-  			if(y<crossPoint){
-  				newA+=expressionB(y)
-  						newB+=expressionA(y)
-  			}
-  			else{
-  				newB+=expressionB(y)
-					newA+=expressionA(y)  
-  			}
-  		}
-			newPopulation+=(new Chromosome(newA))  
-		}
-		population=newPopulation;    
-	}
-	
-	def  pickRandomExpression(s:HashSet[Chromosome] ):Chromosome={
-		var index = (Math.random()*s.size).toInt
-		var t = 0;
-		for(c:Chromosome <- s){
-			if(t==index){
-				return c;
-			}
-			t+=1
-		}
-		System.out.println("there is a problem")
-		System.out.println(index)
+  private def update() {
+    var fitness = removeFailures()
 
-		return null
-	}
-	
-	def mutations(generations:Int){
+    crossover()
+    mutations(generations)
+    generations += 1
+    findBest()
+  }
 
-		var sDev=standardDev(population)
-		var currentFitness=fitnessRates(generations%SAVE_NUM)
-		var totalFitness=0.0
-		var x:Int = 0
-		for(x <-0 until fitnessRates.length){
-			totalFitness=totalFitness+fitnessRates(x)
-		}
+  private def removeFailures() = {
+    var totalFitness = 0.0
 
-		var avgFitness=totalFitness/SAVE_NUM;
-		var difference=Math.abs(totalFitness/(avgFitness+0.00000001))
+    for (c: Chromosome <- population) {
+      totalFitness = totalFitness + c.getFitness()
+    }
 
-		changeTrend+=difference
-		sDevTrend+=sDev
+    var averageFitness = totalFitness / population.size
+    var tolerance = 0.1 //Account for rounding issues that could make each chromosome "below average".
+    population = population.filter((c: Chromosome) => c.getFitness > averageFitness - tolerance)
+    averageFitnessTrend += averageFitness
+  }
 
-		//The mutation rate should be higher if the population is starting to stagnate
-		var mutationRate=Math.min(0.1,0.1/(difference*sDev+0.00000001))
+  /*
+   * Generates new candidate solutions by sharing data between existing solutions.
+   */
+  private def crossover() {
+    var totalFitness = 0
+    var newPopulation = new HashSet[Chromosome]()
+    while (newPopulation.size < POPULATION_SIZE) {
 
-		for(c:Chromosome <- population){
-			c.mutate(mutationRate)    
-		}
-	}
-	
-	def findBest(){
-		var max:Chromosome = null
-		var maxVal=(-1.0)
-		for(c:Chromosome<-population){
-			if(c.getFitness()>maxVal){
-				max=c;
-				maxVal=c.getFitness();
-			}
-		}
-	  fitnessRates+=maxVal;    
-	}
-	
-	def getFitnessRates:ArrayBuffer[Double] = fitnessRates
-	def getSDevTrend:ArrayBuffer[Double] = sDevTrend
-	def getChangeTrend:ArrayBuffer[Double] = changeTrend
-	def getAverageFitnessTrend:ArrayBuffer[Double] = averageFitnessTrend
-	
-	def standardDev(population:HashSet[Chromosome]):Double={ 
+      var mom = pickRandomSolution(population)
+      var dad = pickRandomSolution(population)
+      newPopulation += Chromosome.swap(mom,dad)
+    }
+    population = newPopulation;
+  }
 
-		var data = new HashMap[Chromosome,ArrayBuffer[Double]]
-		var average = new ArrayBuffer[Double]
-		var i = 0
-		for(i<-0 until population.size){
-			average+=0.0
-		}
+  private def pickRandomSolution(s: HashSet[Chromosome]): Chromosome = {
+    var index = (Math.random() * s.size).toInt
+    var t = 0;
+    for (c: Chromosome <- s) {
+      if (t == index) {
+        return c;
+      }
+      t += 1
+    }
+    System.err.println("Population has died off")
+    return null
+  }
 
-		var totalFitness = 0.0
-		for(c:Chromosome <- population){
-			var expr=c.getExpression();
-		  var d=new ArrayBuffer[Double]();
-			var x =0
-			for(x<-0 until expr.size){
+  /**
+   * Causes random changes to the solutions.
+   * @param generations How long the population has existed. As this
+   * value increses, the likelihood of mutations will increase.
+   */
+  def mutations(generations: Int) {
 
-				if(x%2==0){
-					var y=expr(x).toDouble;
-					d+=y;
-					average.insert(x,average(x)+y);
-				}
+    var totalFitness = 0.0
+    var x: Int = 0
 
-				else{
-					var q =expr(x);
-					if(q=="+"){
-						d+=7.0;
-						average(x)=average(x)+7.0;
-					}
-					else if(q=="-"){
-						d+=3.0;
-						average(x)=average(x)+3.0; 
-					}
-					else if(q=="*"){
-						d+=9.0;
-						average(x)=average(x)+9.0;
-					}
-					else if(q=="/"){
-						d+=1.0;
-						average(x)=average(x)+1.0;
-					}
-				}
-			}
-			data.put(c,d);
-		}
+    var difference = 0.001
+    if (generations > 1) {
+      difference = Math.abs(averageFitnessTrend(generations - 1) - averageFitnessTrend(generations - 2))
+      changeTrend += difference
+    }
+    changeTrend +=difference
+    
+    //Dynamically change the mutation rate based on the standard deviation to prevent stagnation.
+    var sDev = standardDev(population)
+    sDevTrend += sDev
+    var mutationRate = Math.min(MAX_MUTATION_RATE,generations.toDouble/1000.0 + 0.1 / (difference * sDev + Math.pow(10, -9)))
 
-		var totalDistance=0.0;
-		for((c,location:ArrayBuffer[Double])<-data){
-  		var myDist=0.0
-  		var x = 0
-  		for(x<-0 until location.size){
-  			myDist=myDist+Math.abs(location(x)-average(x));
-  		}
-  		totalDistance=totalDistance+myDist;
-  	}
-		var sDev=Math.log(totalDistance);
-		return sDev;
-	}
+    for (c: Chromosome <- population) {
+      c.mutate(mutationRate)
+    }
+  }
+
+  def findBest() {
+    def max(x:Chromosome,y:Chromosome):Chromosome={
+      if(x.getFitness>y.getFitness){
+        return x
+      }
+      return y
+    }
+    fitnessRates+=population.reduceLeft(max).getFitness()
+  }
+
+  def getFitnessRates: ArrayBuffer[Double] = fitnessRates
+  def getSDevTrend: ArrayBuffer[Double] = sDevTrend
+  def getChangeTrend: ArrayBuffer[Double] = changeTrend
+  def getAverageFitnessTrend: ArrayBuffer[Double] = averageFitnessTrend
+
+  def standardDev(population: HashSet[Chromosome]): Double = {
+
+    var data = new HashMap[Chromosome, ArrayBuffer[Double]]
+    var average = new ArrayBuffer[Double]
+    var i = 0
+    for (i <- 0 until population.size) {
+      average += 0.0
+    }
+
+    var totalFitness = 0.0
+    for (c: Chromosome <- population) {
+      var expr = c.getExpression();
+      var d = new ArrayBuffer[Double]();
+      var x = 0
+      for (x <- 0 until expr.size) {
+
+        if (x % 2 == 0) {
+          var y = expr(x).toDouble;
+          d += y;
+          average.insert(x, average(x) + y);
+        } else {
+          var q = expr(x);
+          if (q == "+") {
+            d += 7.0;
+            average(x) = average(x) + 7.0;
+          } else if (q == "-") {
+            d += 3.0;
+            average(x) = average(x) + 3.0;
+          } else if (q == "*") {
+            d += 9.0;
+            average(x) = average(x) + 9.0;
+          } else if (q == "/") {
+            d += 1.0;
+            average(x) = average(x) + 1.0;
+          }
+        }
+      }
+      data.put(c, d);
+    }
+
+    var totalDistance = 0.0;
+    for ((c, location: ArrayBuffer[Double]) <- data) {
+      var myDist = 0.0
+      var x = 0
+      for (x <- 0 until location.size) {
+        myDist = myDist + Math.abs(location(x) - average(x));
+      }
+      totalDistance = totalDistance + myDist;
+    }
+    var sDev = Math.log(totalDistance);
+    return sDev;
+  }
 
 }

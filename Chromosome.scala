@@ -1,5 +1,25 @@
 import scala.collection.mutable.ArrayBuffer
 
+object Chromosome{
+  def swap(mom:Chromosome,dad:Chromosome):Chromosome={
+    
+    var momExpr = mom.getExpression()
+    var dadExpr = dad.getExpression()
+    var crossPoint = (Math.random() * momExpr.size - 1).toInt
+    var childExpr = new ArrayBuffer[String]()
+    
+    var y = 0
+    for (y <- 0 until momExpr.size) {
+      if (y < crossPoint) {
+        childExpr += momExpr(y)
+      } else {
+        childExpr += dadExpr(y)
+      }
+    }
+    return new Chromosome(childExpr)
+  }
+}
+
 /**
  * A object representing a mathematical expression.
  */

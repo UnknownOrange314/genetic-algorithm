@@ -173,12 +173,6 @@ class GraphPanel(pd:Long, w:Int, h:Int,gPool:GenePool) extends JPanel with Runna
 			} 
 		}
 		finishOff()
-	} // end of run()
-
-	def populationUpdate() { 
-		if (!isPaused && !gameOver){
-	    genePool.update()
-		}
 	}
 
 	def dataRender(){
