@@ -195,9 +195,18 @@ class GraphPanel(pd:Long, w:Int, h:Int,gPool:GenePool) extends JPanel with Runna
 		sDevGraph.draw(Color.BLUE,genePool.getSDevTrend,dbg)
 		changeGraph.draw(Color.GREEN,genePool.getChangeTrend,dbg)
 		avgFitnessGraph.draw(Color.GRAY,genePool.getAverageFitnessTrend,dbg)
+		drawStats(dbg)
+	}
+	
+	private def drawStats(dbg:Graphics){
+
+	  dbg.setColor(Color.BLACK)
+	  dbg.drawString("Target number:"+genePool.getTargetData(),1050,200)
+	  
+	  dbg.drawString(genePool.getBest,50,1020)
 	}
 
-	def  paintScreen(){ 
+	def paintScreen(){ 
 		var g:Graphics = null
 		try {
 			g = this.getGraphics();

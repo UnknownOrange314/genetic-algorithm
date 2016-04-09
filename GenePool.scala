@@ -28,8 +28,20 @@ class GenePool {
   var POPULATION_SIZE: Int = _
   var generations = 0
   val SAVE_NUM = 100
-  var MAX_MUTATION_RATE = 0.2
-
+  var MAX_MUTATION_RATE = 0.1
+  var best:Chromosome = _
+  
+  //Returns information about optimal target for gene pool in string form.
+  def getTargetData():String = {
+    return ""+Chromosome.TARGET_NUM  
+  }
+  
+  //Returns information about the best chromosome.
+  def getBest():String = {
+    best.print()
+    val bestStr = best.toStringRounded()
+    return "Optimal formula:"+bestStr
+  }
   def this(popSize: Int) {
     this()
     var i = 0
@@ -124,14 +136,17 @@ class GenePool {
     }
   }
 
-  def findBest() {
-    def max(x:Chromosome,y:Chromosome):Chromosome={
-      if(x.getFitness>y.getFitness){
-        return x
-      }
-      return y
-    }
-    fitnessRates+=population.reduceLeft(max).getFitness()
+  def findBest(){
+ 		var max:Chromosome = null
+ 		var maxVal=(-1.0)
+ 		for(c:Chromosome<-population){
+ 			if(c.getFitness()>maxVal){
+ 				max=c;
+ 				maxVal=c.getFitness();
+ 			}
+ 		}
+ 		best = max
+ 	  fitnessRates+=maxVal;   
   }
 
   def getFitnessRates: ArrayBuffer[Double] = fitnessRates

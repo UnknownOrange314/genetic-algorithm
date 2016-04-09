@@ -30,10 +30,10 @@ class FormulaGenerator(period:Long) extends JFrame{
 	var c=getContentPane()
 
 
-	private val WIDTH=1000
-	private val HEIGHT=1000
+	private val WIDTH=1300
+	private val HEIGHT=1100
 	
-	val POPULATION_SIZE = 20
+	val POPULATION_SIZE = 40
   var genePool = new GenePool(POPULATION_SIZE)
 	private var myGraphPanel=new GraphPanel(period,WIDTH,HEIGHT,genePool)
 	
@@ -54,17 +54,8 @@ class FormulaGenerator(period:Long) extends JFrame{
 
 	setVisible(true)
 
-	//buttons for gameMenu
-	var menu:JPanel=_ //The menu panel
-	var quit:JButton=_ //Tells Game to quit
-	var restart:JButton=_ //Tells Game to restart
-	var pause:JButton=_//Pauses game
-	var resume:JButton=_//Resumes game
-	var help:JButton=_//Gives Game Instructions
-
-	var scorePanel:JPanel=_//gives game score
-	var playerOneScore:JLabel=_
-	var scoringTimer:javax.swing.Timer=_//Gets Player One's score
+	var menu:JPanel=_ //The menu panel.
+	var quit:JButton=_ //Stops genetic algorithm.
 
 	def makeGUI(){	
 		var c = getContentPane()
@@ -76,13 +67,7 @@ class FormulaGenerator(period:Long) extends JFrame{
 		quit=new JButton("quit")
 		menu.add(quit)
 		quit.addActionListener(new QuitListener())
-
 		c.add(menu,"East")
-
-		scorePanel=new JPanel()
-		scorePanel.setLayout(new GridLayout(1,1))
-
-		c.add(scorePanel, "South")
 	} 
 
 
@@ -91,5 +76,4 @@ class FormulaGenerator(period:Long) extends JFrame{
 			System.exit(1)
 		}
 	}
-
 }

@@ -42,6 +42,7 @@ class Graph {
 				maxVal=dVal
 			}
 		}
+    //Don't display outliers.
 
 		var index=0.0
 		var count=0	
@@ -49,8 +50,8 @@ class Graph {
 		var height = size-topMargin-bottomMargin	
 	
 		var x:Int = 0
-		for(x<-leftMargin until size-1){
-		  val drawIdx = data.size*(x-leftMargin)/(size-leftMargin)
+		for(x<-leftMargin until size-1-rightMargin){
+		  val drawIdx = data.size*(x-leftMargin)/(size-leftMargin-rightMargin)
 		  
 		  var value = data(drawIdx)
 		  
@@ -58,7 +59,6 @@ class Graph {
 		  if(drawIdx>0&&drawIdx<data.size-1){
 		    value = (value+data(drawIdx-1)+data(drawIdx+1))/3
 		  }
-		  println(value)
 		  
 		  var y = (height-height*data(drawIdx)/maxVal).toInt + topMargin
 		  var sz = 4
@@ -81,11 +81,20 @@ class Graph {
   def drawYAxis(drawX:Int,minY:Int, maxY:Int, maxVal:Double,dbg:Graphics){
     dbg.setFont(new Font("TimesRoman",Font.PLAIN,12))
     var formatter = new DecimalFormat("0.##")
+    var medFormat = new DecimalFormat("0.#")
+    var largeFormat = new DecimalFormat("0")
     var drawY:Int = 0
     for(drawY<-maxY until minY by -30){
       var value = maxVal - maxVal*(drawY-minY).toDouble/(maxY-minY).toDouble
       dbg.setColor(Color.BLACK)
-      dbg.drawString(""+formatter.format(value),drawX-35,drawY+6)
+      if(value>1000){
+        dbg.drawString(""+largeFormat.format(value),drawX-40,drawY+6)
+      }
+      else if(value>100){
+        dbg.drawString(""+medFormat.format(value),drawX-40,drawY+6)
+      }else{
+        dbg.drawString(""+formatter.format(value),drawX-40,drawY+6)
+      }
       dbg.setColor(Color.GRAY)
       dbg.drawLine(xPos+leftMargin,drawY,xPos+size-rightMargin,drawY)
       
